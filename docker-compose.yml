@@ -1,0 +1,101 @@
+version: "3.9"
+
+services:
+  app:
+    image: index.docker.io/appsmith/appsmith-ce:latest
+    restart: always
+    environment:
+      APPSMITH_SUPERVISOR_USER: ${SUPERVISOR_USER}
+      APPSMITH_SUPERVISOR_PASSWORD: ${SUPERVISOR_PASSWORD}
+      APPSMITH_CUSTOM_DOMAIN: ${DOMAIN}
+      APPSMITH_MONGODB_URI: mongodb+srv://${DB_USER}:${DB_PASSWORD}@db/${DB_NAME}
+      APPSMITH_MONGODB_USER: ${DB_USER}
+      APPSMITH_MONGODB_PASSWORD: ${DB_PASSWORD}
+      APPSMITH_REDIS_URL: redis://redis:6379
+      APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_PASSWORD}
+      APPSMITH_ENCRYPTION_SALT: ${ENCRYPTION_SALT}
+      APPSMITH_EMAIL_ENABLED: true
+      APPSMITH_SMTP_AUTH_ENABLED: true
+      APPSMITH_TLS_ENABLED: true
+      APPSMITH_EMAIL_SERVER_HOST: ${EMAIL_SERVER_HOST}
+      APPSMITH_EMAIL_SERVER_PORT: ${EMAIL_SERVER_PORT}
+      APPSMITH_EMAIL_SERVER_USERNAME: ${EMAIL_SERVER_USERNAME}
+      APPSMITH_EMAIL_SERVER_PASSWORD: ${EMAIL_SERVER_PASSWORD}
+      APPSMITH_EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+      APPSMITH_EMAIL_REPLY_TO_ADDRESS: ${EMAIL_REPLY_TO_ADDRESS}
+    volumes:
+      - ${BASE_VOLUME}/data:/appsmith-stacks
+    expose:
+      - 80
+      - 443
+    networks:
+      - internal
+      - nginx
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_APP_CPU:-1}
+          memory: ${LIMIT_APP_RAM:-1G}
+        reservations:
+          cpus: "0.2"
+          memory: 128M
+  db:
+    image: mongo:7
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+    expose:
+      - 27017
+    volumes:
+      - ${BASE_VOLUME}/mongo:/data/db
+    networks:
+      - internal
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_DB_CPU:-1}
+          memory: ${LIMIT_DB_RAM:-256M}
+        reservations:
+          cpus: "0.1"
+          memory: 16M
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${BASE_VOLUME}/redis:/data
+    expose:
+      - 6379
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_REDIS_CPU:-1}
+          memory: ${LIMIT_REDIS_RAM:-512M}
+        reservations:
+          cpus: "0.1"
+          memory: 16M
+
+networks:
+  internal:
+  nginx:
+    external: true
+  monitoring:
+    external: true
