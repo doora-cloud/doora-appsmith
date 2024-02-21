@@ -19,12 +19,10 @@ services:
       APPSMITH_EMAIL_SERVER_PASSWORD: ${EMAIL_SERVER_PASSWORD}
       APPSMITH_EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
       APPSMITH_EMAIL_REPLY_TO_ADDRESS: ${EMAIL_REPLY_TO_ADDRESS}
-      HTTP_PROXY: http://0.0.0.0:8080
     volumes:
       - ${BASE_VOLUME}/data:/appsmith-stacks
     expose:
       - 80
-      - 8080
     networks:
       - internal
       - nginx
