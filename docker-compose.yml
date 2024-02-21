@@ -2,12 +2,11 @@ version: "3.9"
 
 services:
   app:
-    image: index.docker.io/appsmith/appsmith-ce:latest
+    image: appsmith/appsmith-ce:latest
     restart: always
     environment:
       APPSMITH_SUPERVISOR_USER: ${SUPERVISOR_USER}
       APPSMITH_SUPERVISOR_PASSWORD: ${SUPERVISOR_PASSWORD}
-      APPSMITH_CUSTOM_DOMAIN: ${DOMAIN}
       APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_PASSWORD}
       APPSMITH_ENCRYPTION_SALT: ${ENCRYPTION_SALT}
       APPSMITH_EMAIL_ENABLED: true
